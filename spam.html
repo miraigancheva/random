@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>💚 root@heartOS:~$</title>
+  <style>
+    :root{
+      --bg1:#031a10;
+      --bg2:#0a5c34;
+      --card: rgba(6, 22, 15, .72);
+      --border: rgba(53,255,154,.25);
+      --green:#00e676;
+      --green2:#35ff9a;
+      --text:#eafff3;
+      --muted:#bdebd1;
+      --shadow: 0 20px 70px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    body{
+      overflow:hidden;
+      color:var(--text);
+      background:
+        radial-gradient(900px 600px at 20% 20%, rgba(0,230,118,.18), transparent 60%),
+        radial-gradient(900px 600px at 80% 30%, rgba(53,255,154,.14), transparent 55%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+    }
+    canvas#matrix{
+      position:fixed; inset:0; z-index:0;
+      opacity:.28;
+      filter: blur(.2px);
+    }
+
+    .wrap{height:100%; display:grid; place-items:center; padding:22px; position:relative; z-index:1;}
+    .terminal{
+      width:min(860px, 96vw);
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .titlebar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px;
+      background: rgba(0,0,0,.35);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .dots{display:flex; gap:8px; align-items:center}
+    .dot{width:10px;height:10px;border-radius:999px;opacity:.85}
+    .dot.r{background:#ff5f56}
+    .dot.y{background:#ffbd2e}
+    .dot.g{background:#27c93f}
+    .bartext{color:rgba(234,255,243,.85); font-size:13px}
+    .tag{
+      font-size:12px; color:var(--muted);
+      border:1px solid rgba(53,255,154,.22);
+      background: rgba(0,0,0,.18);
+      padding:6px 10px; border-radius:999px;
+    }
+
+    .content{padding:18px 18px 16px; background: var(--card); position:relative;}
+    .glow{
+      position:absolute; inset:-140px -160px auto auto;
+      width:420px;height:420px;
+      background: radial-gradient(circle, rgba(0,230,118,.32), transparent 60%);
+      filter: blur(8px);
+      transform: rotate(10deg);
+      pointer-events:none;
+    }
+
+    .banner{
+      display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+      margin-bottom: 10px;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(53,255,154,.22);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size:12px;
+    }
+    .spark{width:8px;height:8px;border-radius:999px;background:var(--green); box-shadow:0 0 14px rgba(0,230,118,.7);}
+
+    .screen{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      padding:14px 14px 10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .ascii{
+      margin:0 0 10px;
+      font-size:12px;
+      color: rgba(189,235,209,.92);
+      white-space:pre;
+      line-height:1.15;
+      text-shadow: 0 0 14px rgba(0,230,118,.14);
+    }
+    .prompt{
+      font-size: 14px;
+      line-height:1.55;
+      margin: 6px 0 0;
+      color: rgba(234,255,243,.95);
+    }
+    .prompt .u{color: var(--green2)}
+    .prompt .p{color: rgba(189,235,209,.9)}
+    .typing{
+      display:inline;
+      border-right: 2px solid rgba(53,255,154,.8);
+      animation: caret 1s steps(1) infinite;
+      padding-right:2px;
+    }
+    @keyframes caret{50%{border-color:transparent}}
+
+    .arena{
+      margin-top: 14px;
+      height: 190px;
+      border-radius:14px;
+      border:1px dashed rgba(53,255,154,.25);
+      background: rgba(0,0,0,.18);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .btn{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      user-select:none;
+      font-weight:900;
+      letter-spacing:.2px;
+      padding:14px 16px;
+      border-radius:14px;
+      font-size:15px;
+      min-width: 190px;
+      position:absolute;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+      outline:none;
+    }
+    .btn:active{ transform: scale(.98); }
+
+    .yes{
+      left: 18px; top: 62px;
+      background: linear-gradient(180deg, var(--green2), var(--green));
+      color:#062112;
+      box-shadow: 0 18px 40px rgba(0,230,118,.22);
+    }
+    .yes:hover{ filter:brightness(1.06); transform: translateY(-2px); box-shadow: 0 22px 55px rgba(0,230,118,.30); }
+
+    .no{
+      left: 280px; top: 62px;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 14px 32px rgba(0,0,0,.28);
+    }
+    .no:hover{ transform: translateY(-2px); }
+
+    .hud{
+      margin-top: 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .chip{
+      border:1px solid rgba(53,255,154,.22);
+      background: rgba(0,0,0,.18);
+      padding:7px 10px;
+      border-radius:999px;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.58);
+      border: 1px solid rgba(53,255,154,.25);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      transition: opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+      max-width: min(720px, 92vw);
+      text-align:center;
+      z-index: 30;
+    }
+    .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+    .overlay{
+      position:fixed; inset:0;
+      display:none; place-items:center;
+      background: radial-gradient(900px 600px at 50% 30%, rgba(0,230,118,.22), rgba(0,0,0,.70));
+      backdrop-filter: blur(6px);
+      z-index: 50;
+    }
+    .overlay.show{display:grid;}
+    .modal{
+      width:min(900px, 94vw);
+      border-radius:18px;
+      padding:18px 16px 16px;
+      background: rgba(6, 26, 17, .78);
+      border:1px solid rgba(53,255,154,.30);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .modal h2{
+      margin: 0 0 6px;
+      font-size: clamp(20px, 3.6vw, 30px);
+      text-shadow: 0 0 18px rgba(0,230,118,.35);
+    }
+    .modal p{ margin:0 0 12px; color: var(--muted); line-height:1.5; font-size:14px; }
+    .log{
+      margin:10px 0 12px;
+      padding:12px;
+      border-radius:14px;
+      background: rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(234,255,243,.92);
+      font-size: 13px;
+      line-height:1.5;
+      white-space:pre-wrap;
+    }
+    .actions{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
+    .close{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.18);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .close:hover{ transform: translateY(-1px); }
+
+    .confetti{
+      position: fixed;
+      top: -18px;
+      z-index: 60;
+      pointer-events:none;
+      animation: fall linear forwards;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.25));
+      font-size: 18px;
+      opacity:.98;
+    }
+    @keyframes fall{
+      to{ transform: translate3d(var(--dx), 112vh, 0) rotate(var(--rot)); }
+    }
+
+    @media (hover:none){
+      .hud .hint{display:none;}
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="matrix"></canvas>
+
+  <div class="wrap">
+    <div class="terminal" role="application" aria-label="valentine terminal">
+      <div class="titlebar">
+        <div class="dots">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        </div>
+        <div class="bartext">root@heartOS:~$</div>
+        <div class="tag">GREEN MODE ✅</div>
+      </div>
+
+      <div class="content">
+        <div class="glow"></div>
+
+        <div class="banner">
+          <div class="badge"><span class="spark"></span> Linux lover detected 🐧</div>
+          <div class="badge">Cybersecurity: armed & adorable 🔒</div>
+          <div class="badge">Basketball energy 🏀</div>
+          <div class="badge">Bosnia vibes 🇧🇦</div>
+        </div>
+
+        <div class="screen">
+<pre class="ascii">
+   _    _            _    ___  ____  
+  | |  | |          | |  / _ \/ ___| 
+  | |__| | ___  __ _| |_| | | \___ \ 
+  |  __  |/ _ \/ _` | __| |_| |___) |
+  |_|  |_|\___/\__,_|\__|\___/|____/ 
+</pre>
+
+          <div class="prompt">
+            <span class="u">you@terminal</span>:<span class="p">~</span>$ <span class="typing" id="type"></span>
+          </div>
+
+          <div class="arena" id="arena" aria-label="choice area">
+            <button class="btn yes" id="yesBtn">YES ✅ (accept handshake)</button>
+            <button class="btn no" id="noBtn">NO 🚫 (drop packet)</button>
+          </div>
+
+          <div class="hud">
+            <div class="chip hint">Tip: Try clicking “NO”… if you can 😈</div>
+            <div class="chip">NO dodges: <strong id="dodges">0</strong></div>
+            <div class="chip">Scoreboard: 💚 1 — 🫵 0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal">
+      <h2>Handshake successful 💚🔒</h2>
+      <p>
+        Connection established with <strong>boyfriend@my-heart</strong> via <strong>ssh</strong>. Encryption: <strong>YES-256</strong>.
+        (Totally real. Definitely not just cute.)
+      </p>
+
+      <div class="log" id="log"></div>
+
+      <div class="actions">
+        <button class="close" id="closeBtn">Aww okay 💚</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * Customize here
+     ***********************/
+    const boyfriendName = "my love"; // <-- change to his name if you want
+    const cityOrVibe = "Sarajevo vibes 🇧🇦"; // change: "Mostar", "Banja Luka", etc.
+
+    /***********************
+     * Typewriter line
+     ***********************/
+    const typeEl = document.getElementById("type");
+    const typeLine = `ssh ${boyfriendName.replace(/\s+/g,'_')}@my-heart  # will you be my valentine?`;
+    let ti = 0;
+    function typeWriter(){
+      typeEl.textContent = typeLine.slice(0, ti++);
+      if(ti <= typeLine.length) requestAnimationFrame(() => setTimeout(typeWriter, 24));
+    }
+    typeWriter();
+
+    /***********************
+     * Toast
+     ***********************/
+    const toast = document.getElementById("toast");
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 1200);
+    }
+
+    /***********************
+     * NO button chaos
+     ***********************/
+    const arena = document.getElementById("arena");
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+    const dodgesEl = document.getElementById("dodges");
+    let dodges = 0;
+
+    const funnyCyberLines = [
+      "iptables: DROPPED 🚫",
+      "Access denied: you lack permission to click NO 😇",
+      "Kernel panic avoided. NO teleported 🏃‍♂️💨",
+      "CVE-LOVE-2026 exploited: forced YES ✅",
+      "Firewall rules updated: NO is not allowed 🔒",
+      "Nice try. NO went full ninja mode 🥷",
+      "Packet rerouted to YES (best route) 🧠",
+      "sudo rm -rf /no  (just kidding… unless?) 😈"
+    ];
+
+    function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+    function moveNo(){
+      const a = arena.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+      const pad = 10;
+
+      const maxX = a.width - b.width - pad;
+      const maxY = a.height - b.height - pad;
+
+      const x = Math.random() * maxX + pad/2;
+      const y = Math.random() * maxY + pad/2;
+
+      noBtn.style.left = clamp(x, pad/2, maxX) + "px";
+      noBtn.style.top  = clamp(y, pad/2, maxY) + "px";
+
+      dodges++;
+      dodgesEl.textContent = dodges;
+
+      showToast(funnyCyberLines[dodges % funnyCyberLines.length]);
+      littleBeep();
+    }
+
+    // If cursor gets close to NO: teleport
+    window.addEventListener("mousemove", (e) => {
+      const r = noBtn.getBoundingClientRect();
+      const cx = r.left + r.width/2;
+      const cy = r.top + r.height/2;
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if(dist < 130) moveNo();
+    });
+
+    // Mobile / extra insurance
+    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); moveNo(); }, {passive:false});
+    noBtn.addEventListener("click", (e) => { e.preventDefault(); moveNo(); showToast("Whoa—almost clicked NO 😳"); });
+
+    /***********************
+     * YES overlay + fun log
+     ***********************/
+    const overlay = document.getElementById("overlay");
+    const closeBtn = document.getElementById("closeBtn");
+    const log = document.getElementById("log");
+
+    yesBtn.addEventListener("click", () => {
+      overlay.classList.add("show");
+      overlay.setAttribute("aria-hidden","false");
+
+      const lines = [
+        `[+] Starting secure handshake…`,
+        `[+] Negotiating algorithms: love25519, cuddle-gcm, smiles-sha3`,
+        `[OK] Certificate verified: ${boyfriendName} is 100% certified cute`,
+        `[OK] Auth method: “basketball rizz” 🏀`,
+        `[OK] Linux mode: enabled 🐧`,
+        `[OK] ${cityOrVibe}`,
+        `\n✅ RESULT: You are officially my Valentine 💚`,
+        `Next mission ideas:`,
+        ` • Watch a game + snack draft (your pick) 🏀`,
+        ` • Cozy cyber talk: “teach me one cool security thing” 🔒`,
+        ` • Bosnia food vote: ćevapi / burek / something sweet 😌`
+      ];
+      log.textContent = lines.join("\n");
+
+      showToast("YES detected 💚 Initiating celebration…");
+      confettiBurst(160);
+      bigBeep();
+    });
+
+    closeBtn.addEventListener("click", () => {
+      overlay.classList.remove("show");
+      overlay.setAttribute("aria-hidden","true");
+      showToast("Connection kept alive 💚");
+    });
+
+    /***********************
+     * Confetti: 🏀 🔒 🐧 🇧🇦 💚 ⭐
+     ***********************/
+    function confettiBurst(count=140){
+      const icons = ["💚","🏀","🔒","🐧","🇧🇦","⭐","✨","🌿","🍀"];
+      for(let i=0;i<count;i++){
+        const p = document.createElement("div");
+        p.className = "confetti";
+        p.textContent = icons[Math.floor(Math.random()*icons.length)];
+        p.style.left = (Math.random()*100) + "vw";
+        p.style.animationDuration = (2.0 + Math.random()*2.0) + "s";
+        p.style.setProperty("--dx", (Math.random()*70 - 35) + "vw");
+        p.style.setProperty("--rot", (Math.random()*720 - 360) + "deg");
+        p.style.fontSize = (16 + Math.random()*14) + "px";
+        document.body.appendChild(p);
+        p.addEventListener("animationend", () => p.remove());
+      }
+    }
+
+    /***********************
+     * Tiny beeps (WebAudio)
+     * (If audio blocked, it just won't play—no worries)
+     ***********************/
+    let audioCtx;
+    function beep(freq=740, dur=0.045, gain=0.03){
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "square";
+        o.frequency.value = freq;
+        g.gain.value = gain;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + dur);
+      }catch(e){}
+    }
+    function littleBeep(){ beep(520, 0.035, 0.02); }
+    function bigBeep(){ beep(880, 0.08, 0.03); setTimeout(()=>beep(660,0.08,0.028), 90); }
+
+    /***********************
+     * Matrix background
+     ***********************/
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    let w,h,cols,drops,fontSize;
+    function resize(){
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      fontSize = 16;
+      cols = Math.floor(w / fontSize);
+      drops = Array(cols).fill(0).map(()=> Math.random()*h/fontSize);
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function drawMatrix(){
+      ctx.fillStyle = "rgba(0,0,0,0.06)";
+      ctx.fillRect(0,0,w,h);
+
+      ctx.fillStyle = "rgba(53,255,154,0.8)";
+      ctx.font = fontSize + "px ui-monospace";
+      for(let i=0;i<cols;i++){
+        const char = Math.random() > 0.5 ? "1" : "0";
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+        ctx.fillText(char, x, y);
+
+        if(y > h && Math.random() > 0.975) drops[i] = 0;
+        drops[i] += 0.62;
+      }
+      requestAnimationFrame(drawMatrix);
+    }
+    drawMatrix();
+
+    // Start NO somewhere random
+    moveNo();
+  </script>
+</body>
+</html>
